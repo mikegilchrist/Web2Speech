@@ -10,7 +10,7 @@ Built for GrapheneOS, but it runs on any Android 10 or later.
 
 ## Install
 
-1. Download `Web2Speech-0.1.0.apk` from the Releases page.
+1. Download `Web2Speech-0.1.1.apk` from the Releases page.
 2. Open it on the phone and allow installing from that source when asked.
 3. Open Web2Speech once and allow notifications (needed for the playback controls).
 
