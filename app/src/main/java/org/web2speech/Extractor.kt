@@ -14,6 +14,34 @@ object Extractor {
     fun findUrl(shared: String): String? =
         urlRegex.find(shared)?.value?.trimEnd('.', ',', ')', ';')
 
+    /**
+     * True when shared text is a page share (a short title plus a URL, as browsers send) rather
+     * than prose that merely contains a link, e.g. a Claude reply shared from the Claude app.
+     */
+    fun isPageShare(shared: String): Boolean {
+        val url = findUrl(shared) ?: return false
+        return shared.replace(url, "").trim().length < 200
+    }
+
+    /** Stable queue/position key for shared text (no URL to key on). */
+    fun textKey(text: String): String = "text:" + Integer.toHexString(text.hashCode())
+
+    /** Turn shared prose (possibly Markdown) into an [Article]; nothing is fetched. */
+    fun fromText(shared: String): Article {
+        val text = tidy(markdownToSpeech(shared))
+        val first = text.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty()
+        val title = if (first.length > 60) first.take(57).trimEnd() + "..." else first
+        return Article(textKey(shared), title.ifEmpty { "Shared text" }, text)
+    }
+
+    /** Drop Markdown furniture that a speech engine would read aloud as symbols. */
+    internal fun markdownToSpeech(s: String): String =
+        s.replace(Regex("```[\\s\\S]*?```"), " code block omitted. ")
+            .replace(Regex("\\[([^\\]]+)]\\([^)]*\\)"), "$1")
+            .replace(Regex("(?m)^\\s{0,3}#{1,6}\\s*"), "")
+            .replace(Regex("(?m)^\\s*[-*+]\\s+"), "")
+            .replace(Regex("[*_`|]+"), "")
+
     fun fetch(url: String): Article {
         val html = Jsoup.connect(url)
             .userAgent("Mozilla/5.0 (Android 14; Mobile; rv:128.0) Gecko/128.0 Firefox/128.0")

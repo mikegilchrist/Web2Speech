@@ -32,6 +32,7 @@ class SpeechService : Service() {
         const val ACTION_STOP = "org.web2speech.STOP"
         const val ACTION_APPLY = "org.web2speech.APPLY"
         const val EXTRA_URL = "url"
+        const val EXTRA_TEXT = "text"
         private const val CHANNEL = "playback"
         private const val NOTIF_ID = 1
     }
@@ -44,6 +45,8 @@ class SpeechService : Service() {
     private val deferred = ArrayDeque<Intent>()
 
     private val waiting = ArrayDeque<String>()
+    /** Shared prose waiting to be read, keyed by [Extractor.textKey]; queue entries beginning "text:" point here. */
+    private val sharedText = HashMap<String, String>()
     private var loading = false
     private var current: Article? = null
     private var chunks: List<String> = emptyList()
@@ -94,7 +97,14 @@ class SpeechService : Service() {
 
     private fun handle(i: Intent) {
         when (i.action) {
-            ACTION_ENQUEUE -> i.getStringExtra(EXTRA_URL)?.let { enqueue(it) }
+            ACTION_ENQUEUE -> {
+                i.getStringExtra(EXTRA_URL)?.let { enqueue(it) }
+                i.getStringExtra(EXTRA_TEXT)?.let { t ->
+                    val key = Extractor.textKey(t)
+                    sharedText[key] = t
+                    enqueue(key)
+                }
+            }
             ACTION_PLAYPAUSE -> if (playing) pause() else if (current != null) play()
             ACTION_NEXT -> skip(+1)
             ACTION_PREV -> skip(-1)
@@ -119,7 +129,7 @@ class SpeechService : Service() {
         refreshNotification("Loading...", url)
         io.execute {
             try {
-                val art = Extractor.fetch(url)
+                val art = sharedText.remove(url)?.let { Extractor.fromText(it) } ?: Extractor.fetch(url)
                 main.post { loading = false; begin(art) }
             } catch (e: Exception) {
                 main.post {

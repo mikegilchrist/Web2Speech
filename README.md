@@ -10,13 +10,16 @@ Built for GrapheneOS, but it runs on any Android 10 or later.
 
 ## Install
 
-1. Download `Web2Speech-0.1.1.apk` from the Releases page.
+1. Download `Web2Speech-0.2.0.apk` from the Releases page.
 2. Open it on the phone and allow installing from that source when asked.
 3. Open Web2Speech once and allow notifications (needed for the playback controls).
 
 ## Use
 
 - From a browser: Share, then Web2Speech. Reading starts in the background.
+- From any app (e.g. a reply in the Claude app): Share the text itself. If the shared
+  text is not just a title and a link, it is read as written, with Markdown symbols
+  removed and code blocks skipped. Nothing is fetched.
 - Sharing again while it is reading adds the page to a queue.
 - Notification controls: back, play/pause, next, stop. A part is a few sentences.
 - The app remembers where you stopped in each page.
